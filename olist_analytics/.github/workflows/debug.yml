@@ -1,0 +1,28 @@
+name: dbt Debug (connection check)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    env:
+      DBT_PROFILES_DIR: .
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_CI_USER: ${{ secrets.SNOWFLAKE_CI_USER }}
+      SNOWFLAKE_CI_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_CI_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dbt
+        run: pip install dbt-core dbt-snowflake
+
+      - name: dbt debug (test target)
+        run: dbt debug --target test
+
+      - name: dbt debug (prod target)
+        run: dbt debug --target prod
