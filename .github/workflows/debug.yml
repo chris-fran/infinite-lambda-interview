@@ -13,7 +13,6 @@ jobs:
       SNOWFLAKE_CI_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_CI_PRIVATE_KEY }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -22,7 +21,9 @@ jobs:
         run: pip install dbt-core dbt-snowflake
 
       - name: dbt debug (test target)
+        working-directory: olist_analytics
         run: dbt debug --target test
 
       - name: dbt debug (prod target)
+        working-directory: olist_analytics
         run: dbt debug --target prod
