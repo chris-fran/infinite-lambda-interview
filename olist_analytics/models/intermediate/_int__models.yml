@@ -1,0 +1,47 @@
+models:
+  - name: int_geolocation_aggregated
+    description: One row per geolocation_zip_prefix, average latitude and longitude. Can be used for customer and seller enrichment.
+    columns:
+      - name: geolocation_zip_prefix
+        description: Grain of this model. City and state left out, customers and sellers already have their own.
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_customers_deduped
+    description: One row per customer_unique_id_hash, the real person behind the repeated customer_id rows. Customer fields come from the customer's most recent order, found by joining to orders and keeping the latest order_purchase_timestamp per person.
+    columns:
+      - name: customer_unique_id_hash
+        description: Grain of this model. Confirms the dedup got to one row per real person.
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_last_active_on
+        description: Date of the customer's most recent order.
+
+  - name: int_order_items_aggregated
+    description: One row per order_id, price and freight summed separately from order_items. 
+    columns:
+      - name: order_id
+        description: Grain of this model. Confirms the aggregation got to one row per order.
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_product_sales_aggregated
+    description: One row per product_id, units sold and revenue summed from order_items. 
+    columns:
+      - name: product_id
+        description: Grain of this model. Confirms the aggregation got to one row per product.
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_order_payments_summed
+    description: One row per order_id, payment_value summed across every payment on that order, regardless of payment_type. 
+    columns:
+      - name: order_id
+        description: Grain of this model. Confirms the aggregation got to one row per order.
+        data_tests:
+          - unique
+          - not_null

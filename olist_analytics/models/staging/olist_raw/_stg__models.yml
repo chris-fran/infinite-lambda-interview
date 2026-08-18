@@ -2,6 +2,8 @@ models:
   - name: stg_olist_raw__customers
     description: One row per customer_id, same grain as the source. Fully qualified customer_ columns; customer_first_name, customer_last_name and customer_email are the synthetic PII columns.
     columns:
+      - name: customer_unique_id_hash
+        description: Hashed with sha2(customer_unique_id). Same customer always gets the same hash, so counts and joins still work without carrying the raw identifier past staging.
       - name: customer_zip_prefix
         description: First digits of the customer's zip code only, not the full code. Renamed from customer_zip_code_prefix.
       - name: customer_first_name
