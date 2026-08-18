@@ -1,8 +1,8 @@
-with 
+with
 
 source as (
 
-    select * from {{ source('olist_raw', 'order_reviews')}}
+    select * from {{ source('olist_raw', 'order_reviews') }}
 
 ),
 
@@ -16,13 +16,13 @@ renamed as (
         coalesce(review_comment_message, 'n/a') as review_comment_message,
         convert_timezone('America/Sao_Paulo', 'UTC', review_creation_date) as review_creation_date,
         convert_timezone('America/Sao_Paulo', 'UTC', review_answer_timestamp) as review_answer_timestamp
-    
-    from source 
+
+    from source
 ),
 
 deduped as (
-    
-    select * 
+
+    select *
     from renamed
     qualify row_number() over (
         partition by order_id

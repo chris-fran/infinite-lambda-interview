@@ -2,7 +2,7 @@ with
 
 source as (
 
-    select * from {{ source('olist_raw', 'orders' )}}
+    select * from {{ source('olist_raw', 'orders' ) }}
 
 ),
 
@@ -18,7 +18,7 @@ renamed as (
         convert_timezone('America/Sao_Paulo', 'UTC', order_delivered_customer_date) as order_delivered_customer_date,
         convert_timezone('America/Sao_Paulo', 'UTC', order_estimated_delivery_date) as order_estimated_delivery_date,
         loaded_at as order_loaded_at
-    
+
     from source
 )
 

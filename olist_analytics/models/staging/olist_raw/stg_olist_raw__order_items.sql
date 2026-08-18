@@ -1,4 +1,4 @@
-with 
+with
 
 source as (
 
@@ -9,14 +9,14 @@ source as (
 renamed as (
 
     select
-        order_id, 
+        order_id,
         order_item_id,
         product_id,
         seller_id,
         convert_timezone('America/Sao_Paulo', 'UTC', shipping_limit_date) as shipping_limit_date,
         price,
         freight_value
-    
+
     from source
 
 )

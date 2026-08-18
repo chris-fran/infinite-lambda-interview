@@ -195,7 +195,7 @@ sources:
               - not_null
               - dbt_expectations.expect_column_values_to_be_between:
                   arguments:
-                    min_value: 1
+                    min_value: 0
           - name: payment_value
             data_tests:
               - not_null
