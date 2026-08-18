@@ -5,6 +5,24 @@ on:
     branches: [main]
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: olist_analytics
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install sqlfluff
+        run: pip install sqlfluff==4.3.0
+
+      - name: Lint models
+        run: sqlfluff lint models --format github-annotation-native
+
   build:
     runs-on: ubuntu-latest
     defaults:

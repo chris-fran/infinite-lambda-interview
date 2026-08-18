@@ -1,0 +1,70 @@
+models:
+  - name: stg_olist_raw__customers
+    description: One row per customer_id, same grain as the source. Fully qualified customer_ columns; customer_first_name, customer_last_name and customer_email are the synthetic PII columns.
+    columns:
+      - name: customer_zip_prefix
+        description: First digits of the customer's zip code only, not the full code. Renamed from customer_zip_code_prefix.
+      - name: customer_first_name
+        description: Synthetic PII, tied to customer_unique_id so the same customer gets the same name every time.
+      - name: customer_last_name
+        description: Synthetic PII, tied to customer_unique_id so the same customer gets the same name every time.
+      - name: customer_email
+        description: Synthetic PII, tied to customer_unique_id. A row number is appended at the source to guarantee uniqueness.
+
+  - name: stg_olist_raw__geolocation
+    description: Multiple rows per geolocation_zip_prefix, same grain as the source. Not deduped here, still not clean enough on its own to be a dimension.
+
+  - name: stg_olist_raw__orders
+    description: One row per order_id, same grain as the source. Business timestamps converted from Brazil local time to UTC, loaded_at was already UTC so it's untouched.
+    columns:
+      - name: order_delivered_customer_date
+        description: Timestamp order was delivered, converted to UTC. Null for a small number of delivered orders, a known gap already tested at the source.
+      - name: order_loaded_at
+        description: Renamed from loaded_at. Already UTC at the source, not converted.
+
+  - name: stg_olist_raw__order_items
+    description: Multiple rows per order_id, same grain as the source. order_id plus order_item_id form this table's natural key. shipping_limit_date converted to UTC.
+    columns:
+      - name: price
+        description: Unit price of this order item, excludes freight. The base component of order revenue.
+      - name: freight_value
+        description: Freight (shipping) cost for this order item. A pass-through logistics cost, not revenue.
+
+  - name: stg_olist_raw__order_payments
+    description: Multiple rows per order_id, same grain as the source.
+    columns:
+      - name: payment_sequential
+        description: Sequence of payments made on this order. Read together with payment_installments.
+      - name: payment_installments
+        description: Number of installments this payment is split into. Read together with payment_sequential.
+
+  - name: stg_olist_raw__order_reviews
+    description: One row per order_id after deduping. The source can carry multiple rows for the same order_id, kept the one with the most recent review_answer_timestamp. In practice the duplicate rows share identical title, message and timestamp, so the ordering doesn't change the result, but the dedup is still what gets this table down to one row per order.
+    columns:
+      - name: order_id
+        description: One row per order_id in this model, unlike the source. See the test below, it's what proves the dedup above actually worked.
+        data_tests:
+          - unique
+          - not_null
+      - name: review_comment_title
+        description: Null values replaced with 'n/a' in this model.
+      - name: review_comment_message
+        description: Null values replaced with 'n/a' in this model. Free text, can contain names or phone numbers, not loaded into any mart.
+
+  - name: stg_olist_raw__products
+    description: One row per product_id, same grain as the source. name_length and description_length spelling corrected, weight converted from grams to pounds, dimensions converted from centimeters to inches.
+    columns:
+      - name: product_weight_lb
+        description: Converted from product_weight_g, grams divided by 453.592.
+      - name: product_length_in
+        description: Converted from product_length_cm via the cm_to_in macro.
+      - name: product_height_in
+        description: Converted from product_height_cm via the cm_to_in macro.
+      - name: product_width_in
+        description: Converted from product_width_cm via the cm_to_in macro.
+
+  - name: stg_olist_raw__sellers
+    description: One row per seller_id, same grain as the source.
+    columns:
+      - name: seller_zip_prefix
+        description: First digits of the seller's zip code only, not the full code. Renamed from seller_zip_code_prefix.
