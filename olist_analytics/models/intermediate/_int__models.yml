@@ -9,9 +9,9 @@ models:
           - not_null
 
   - name: int_customers_deduped
-    description: One row per customer_unique_id, the real person behind the repeated customer_id rows. Customer fields come from the customer's most recent order, found by joining to orders and keeping the latest order_purchase_timestamp per person.
+    description: One row per customer_unique_id_hash, the real person behind the repeated customer_id rows. Customer fields come from the customer's most recent order, found by joining to orders and keeping the latest order_purchase_timestamp per person.
     columns:
-      - name: customer_unique_id
+      - name: customer_unique_id_hash
         description: Grain of this model. Confirms the dedup got to one row per real person.
         data_tests:
           - unique

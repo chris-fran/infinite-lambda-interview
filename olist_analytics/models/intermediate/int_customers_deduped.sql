@@ -15,7 +15,7 @@ stg_orders as (
 joined as (
 
     select
-        stg_customers.customer_unique_id,
+        stg_customers.customer_unique_id_hash,
         stg_customers.customer_zip_prefix,
         stg_customers.customer_city,
         stg_customers.customer_state,
@@ -34,7 +34,7 @@ joined as (
 deduped_by_most_recent_purchase as (
 
     select
-        customer_unique_id,
+        customer_unique_id_hash,
         customer_zip_prefix,
         customer_city,
         customer_state,
@@ -46,7 +46,7 @@ deduped_by_most_recent_purchase as (
     from joined
 
     qualify row_number() over (
-        partition by customer_unique_id
+        partition by customer_unique_id_hash
         order by order_purchase_timestamp desc
     ) = 1
 )
