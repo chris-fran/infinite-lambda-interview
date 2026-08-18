@@ -1,2 +1,3 @@
 dbt-core==1.12.2
 dbt-snowflake==1.12.0
+sqlfluff==4.3.0

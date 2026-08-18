@@ -1,0 +1,256 @@
+sources:
+  - name: olist_raw
+    description: Brazilian ecommerce public datasets used as the raw source data for this project
+    database: RAW
+    schema: OLIST
+    tables:
+      - name: customers
+        description: One row per `customer_id`. Multiple `customer_id` rows can share the same `customer_unique_id`, since a new `customer_id` is assigned to every order.
+        identifier: CUSTOMERS
+        columns:
+          - name: customer_id
+            description: Customer identifier, primary key (PK). A new `customer_id` is assigned to every new order.
+            data_tests:
+              - unique
+              - not_null
+          - name: customer_unique_id
+            description: Unique customer identifier, the actual person. Multiple `customer_id` values can map to the same `customer_unique_id`.
+            data_tests:
+              - not_null
+          - name: customer_zip_code_prefix
+            data_tests:
+              - not_null
+          - name: first_name
+            description: Generated `first_name`, tied to `customer_unique_id` so the same customer gets the same name every time.
+            data_tests:
+              - not_null
+          - name: last_name
+            description: Generated `last_name`, tied to `customer_unique_id` so the same customer gets the same name every time.
+            data_tests:
+              - not_null
+          - name: email
+            description: Generated `email`, tied to `customer_unique_id`. A row number is appended to guarantee each email is unique.
+            data_tests:
+              - not_null
+          - name: customer_state
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT',
+                              'MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR',
+                              'SC','SP','SE','TO']
+                  config:
+                    severity: warn
+
+      - name: geolocation
+        description: Multiple rows per `geolocation_zip_code_prefix`
+        identifier: GEOLOCATION
+        columns:
+          - name: geolocation_zip_code_prefix
+            data_tests:
+              - not_null
+          - name: geolocation_lat
+            data_tests:
+              - dbt_expectations.expect_column_values_to_be_between:
+                  arguments:
+                    min_value: -90
+                    max_value: 90
+          - name: geolocation_lng
+            data_tests:
+              - dbt_expectations.expect_column_values_to_be_between:
+                  arguments:
+                    min_value: -180
+                    max_value: 180
+          - name: geolocation_state
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT',
+                              'MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR',
+                              'SC','SP','SE','TO']
+                  config:
+                    severity: warn
+
+      - name: orders
+        description: One row per `order_id`
+        identifier: ORDERS
+        config:
+          loaded_at_field: loaded_at
+          freshness:
+            warn_after: {count: 14, period: day}
+            error_after: {count: 30, period: day}
+        columns:
+          - name: order_id
+            description: Order identifier, primary key (PK)
+            data_tests:
+              - unique
+              - not_null
+          - name: customer_id
+            description: Customer identifier, foreign key (FK) to `customer_id` of `customers` table
+            data_tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('olist_raw', 'customers')
+                    field: customer_id
+          - name: order_status
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: ['invoiced','shipped','unavailable','approved',
+                              'delivered','processing','created','canceled']
+                  config:
+                    severity: warn
+          - name: order_purchase_timestamp
+            data_tests:
+              - not_null
+          - name: order_delivered_customer_date
+            description: Timestamp order was delivered. A small number of delivered orders have this null, see the test below.
+            data_tests:
+              - not_null:
+                  config:
+                    where: "order_status = 'delivered'"
+                    severity: warn
+
+      - name: order_items
+        description: Multiple rows per `order_id`
+        identifier: ORDER_ITEMS
+        columns:
+          - name: order_id
+            description: Order identifier, foreign key (FK) to `order_id` of `orders` table
+            data_tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('olist_raw', 'orders')
+                    field: order_id
+          - name: order_item_id
+            description: Sequential item number within an order (1, 2, 3, ...). `order_id` plus `order_item_id` form this table's natural key.
+            data_tests:
+              - not_null
+              - dbt_expectations.expect_column_values_to_be_between:
+                  arguments:
+                    min_value: 1
+          - name: product_id
+            description: Product identifier, foreign key (FK) to `product_id` of `products` table
+            data_tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('olist_raw', 'products')
+                    field: product_id
+          - name: seller_id
+            description: Seller identifier, foreign key (FK) to `seller_id` of `sellers` table
+            data_tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('olist_raw', 'sellers')
+                    field: seller_id
+          - name: price
+            description: Unit price of this order item, excludes freight. The base component of order revenue.
+            data_tests:
+              - not_null
+              - dbt_expectations.expect_column_values_to_be_between:
+                  arguments:
+                    min_value: 0
+          - name: freight_value
+            description: Freight (shipping) cost for this order item. A pass-through logistics cost, not revenue.
+            data_tests:
+              - not_null
+              - dbt_expectations.expect_column_values_to_be_between:
+                  arguments:
+                    min_value: 0
+
+      - name: order_payments
+        description: Multiple rows per `order_id`
+        identifier: ORDER_PAYMENTS
+        columns:
+          - name: order_id
+            description: Order identifier, foreign key (FK) to `order_id` of `orders` table
+            data_tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('olist_raw', 'orders')
+                    field: order_id
+          - name: payment_sequential
+            description: Sequence of payments made on this order. Read together with `payment_installments`.
+            data_tests:
+              - not_null
+              - dbt_expectations.expect_column_values_to_be_between:
+                  arguments:
+                    min_value: 1
+          - name: payment_type
+            data_tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['credit_card', 'boleto', 'voucher', 'debit_card', 'not_defined']
+                  config:
+                    severity: warn
+          - name: payment_installments
+            description: Number of installments this payment is split into. Read together with `payment_sequential`.
+            data_tests:
+              - not_null
+              - dbt_expectations.expect_column_values_to_be_between:
+                  arguments:
+                    min_value: 1
+          - name: payment_value
+            data_tests:
+              - not_null
+              - dbt_expectations.expect_column_values_to_be_between:
+                  arguments:
+                    min_value: 0
+
+      - name: order_reviews
+        description: Multiple rows per `review_id`. The same `review_id` can span multiple `order_id`s, not a true duplicate.
+        identifier: ORDER_REVIEWS
+        columns:
+          - name: review_id
+            description: Review identifier
+            data_tests:
+              - not_null
+          - name: order_id
+            description: Order identifier, foreign key (FK) to `order_id` of `orders` table
+            data_tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('olist_raw', 'orders')
+                    field: order_id
+          - name: review_score
+            data_tests:
+              - dbt_expectations.expect_column_values_to_be_between:
+                  arguments:
+                    min_value: 1
+                    max_value: 5
+
+      - name: products
+        description: One row per `product_id`
+        identifier: PRODUCTS
+        columns:
+          - name: product_id
+            description: Product identifier, primary key (PK)
+            data_tests:
+              - unique
+              - not_null
+
+      - name: sellers
+        description: One row per `seller_id`
+        identifier: SELLERS
+        columns:
+          - name: seller_id
+            description: Seller identifier, primary key (PK)
+            data_tests:
+              - unique
+              - not_null
+          - name: seller_state
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT',
+                              'MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR',
+                              'SC','SP','SE','TO']
+                  config:
+                    severity: warn

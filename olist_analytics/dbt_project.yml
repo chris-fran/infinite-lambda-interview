@@ -18,8 +18,17 @@ clean-targets:         # directories to be removed by `dbt clean`
 
 
 # Configuring models
-# models:
-#   olist_analytics:
-#     +materialized: view
-#     test_model:
-#       +materialized: table
+models:
+  olist_analytics:
+    staging:
+      +schema: staging
+    intermediate:
+      +schema: intermediate
+      +materialized: view
+    marts:
+      +schema: marts
+      +materialized: table
+
+seeds:
+  olist_analytics:
+    +schema: seeds
