@@ -10,7 +10,7 @@ renamed as (
 
     select
         customer_id,
-        customer_unique_id,
+        sha2(customer_unique_id) as customer_unique_id_hash,
         customer_zip_code_prefix as customer_zip_prefix,
         initcap(customer_city) as customer_city,
         customer_state,
