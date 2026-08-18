@@ -8,12 +8,12 @@ stg_order_items as (
 
 aggregated as (
 
-    select 
+    select
         order_id,
         sum(price) as price_sum,
         sum(freight_value) as freight_value_sum,
         'BRL' as currency
-    
+
     from stg_order_items
 
     group by 1

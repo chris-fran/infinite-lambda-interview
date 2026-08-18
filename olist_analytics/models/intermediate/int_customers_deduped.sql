@@ -1,4 +1,4 @@
-with 
+with
 
 stg_customers as (
 
@@ -17,7 +17,7 @@ joined as (
     select
         stg_customers.customer_unique_id,
         stg_customers.customer_zip_prefix,
-        stg_customers.customer_city, 
+        stg_customers.customer_city,
         stg_customers.customer_state,
         stg_customers.customer_first_name,
         stg_customers.customer_last_name,
@@ -26,8 +26,8 @@ joined as (
 
     from stg_customers
 
-    left join stg_orders 
-        on stg_orders.customer_id=stg_customers.customer_id
+    left join stg_orders
+        on stg_customers.customer_id = stg_orders.customer_id
 
 ),
 
@@ -36,18 +36,18 @@ deduped_by_most_recent_purchase as (
     select
         customer_unique_id,
         customer_zip_prefix,
-        customer_city, 
+        customer_city,
         customer_state,
         customer_first_name,
         customer_last_name,
         customer_email,
-        DATE(order_purchase_timestamp) as customer_last_active_on
+        date(order_purchase_timestamp) as customer_last_active_on
 
     from joined
 
     qualify row_number() over (
-            partition by customer_unique_id
-            order by order_purchase_timestamp desc 
+        partition by customer_unique_id
+        order by order_purchase_timestamp desc
     ) = 1
 )
 

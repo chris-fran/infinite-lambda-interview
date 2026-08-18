@@ -8,10 +8,10 @@ stg_geolocation as (
 
 aggregated as (
 
-    select 
+    select
         geolocation_zip_prefix,
         avg(geolocation_latitude) as latitude_avg,
-        avg(geolocation_longitude) as longitude_avg      
+        avg(geolocation_longitude) as longitude_avg
 
     from stg_geolocation
 
