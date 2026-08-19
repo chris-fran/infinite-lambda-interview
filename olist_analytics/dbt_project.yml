@@ -32,3 +32,6 @@ models:
 seeds:
   olist_analytics:
     +schema: seeds
+
+exposures:
+  +enabled: true
