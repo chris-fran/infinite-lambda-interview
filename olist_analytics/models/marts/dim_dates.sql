@@ -17,7 +17,7 @@ final as (
         extract(year from date_day) as year_number,
         extract(quarter from date_day) as quarter_number,
         extract(month from date_day) as month_number,
-        extract(dayofweekiso from date_day) - 1  as day_of_week,-- Monday first
+        extract(dayofweekiso from date_day) - 1 as day_of_week,-- Monday first
         case extract(dayofweekiso from date_day) - 1
             when 0 then 'Monday'
             when 1 then 'Tuesday'
