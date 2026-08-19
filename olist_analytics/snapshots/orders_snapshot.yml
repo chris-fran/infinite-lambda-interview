@@ -1,0 +1,11 @@
+# snapshots/snap_orders_status.yml
+snapshots:
+  - name: snap_orders_status
+    relation: ref('stg_olist_raw__orders')
+    description: Tracks order_status changes over time via SCD Type 2.
+    config:
+      schema: snapshots
+      unique_key: order_id
+      strategy: check
+      check_cols:
+        - order_status

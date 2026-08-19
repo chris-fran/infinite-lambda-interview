@@ -2,6 +2,10 @@
 dialect = snowflake
 templater = jinja
 max_line_length = 120
+# Don't fail on jinja the templater can't resolve (e.g. package macros like
+# dbt_utils.*) or the unparsable SQL that results from it. Real SQL syntax
+# errors are still caught by `dbt build` in CI.
+ignore = templating, parsing
 # Rules docs: https://docs.sqlfluff.com/en/stable/reference/rules.html
 exclude_rules = ambiguous.column_count, structure.column_order
 
