@@ -1,0 +1,89 @@
+models:
+  - name: dim_customers
+    description: One row per customer_unique_id_hash. Built from int_customers_deduped, with average latitude and longitude added from int_geolocation_aggregated.
+    columns:
+      - name: customer_unique_id_hash
+        description: Grain of this model. Confirms the dedup and the hash both held through to marts.
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_first_name
+        description: Synthetic PII. Masked to first and last letter for most roles, full value to be shown only to ANALYST_PII.
+      - name: customer_last_name
+        description: Synthetic PII. Masked to first and last letter for most roles, full value to be shown only to ANALYST_PII.
+      - name: customer_email
+        description: Synthetic PII. Masked to first letter plus domain for most roles, full value to be shown only to ANALYST_PII.
+      - name: customer_latitude
+        description: From geolocation aggregation. Null if the customer's zip prefix has no geolocation coverage.
+      - name: customer_longitude
+        description: From geolocation aggregation. Null if the customer's zip prefix has no geolocation coverage.
+
+  - name: dim_sellers
+    description: One row per seller_id. Average latitude and longitude joined from int_geolocation_aggregated.
+    columns:
+      - name: seller_id
+        description: Grain of this model.
+        data_tests:
+          - unique
+          - not_null
+      - name: seller_latitude
+        description: From geolocation aggregation. Null if the seller's zip prefix has no geolocation coverage.
+      - name: seller_longitude
+        description: From geolocation aggregation. Null if the seller's zip prefix has no geolocation coverage.
+
+  - name: dim_products
+    description: One row per product_id. Category name translated to English via a seed. Sales metrics summarized from int_product_sales_aggregated.
+    columns:
+      - name: product_id
+        description: Grain of this model.
+        data_tests:
+          - unique
+          - not_null
+      - name: product_category_name
+        description: Translated to English. 'n/a' if the raw category name has no match in the translation seed.
+
+  - name: dim_dates
+    description: Generated date spine, one row per calendar day from 2016-09-01 to 2018-11-01, covering the dataset's full date range.
+    columns:
+      - name: date_day
+        description: Grain of this model.
+        data_tests:
+          - unique
+          - not_null
+
+  - name: fct_orders
+    description: One row per order_id. Incremental, merge on order_id, filtered on order_purchase_timestamp with a 3 day lookback. Combines order status, item and freight totals, payment totals, and review score.
+    columns:
+      - name: order_id
+        description: Grain of this model.
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_unique_id_hash
+        description: Foreign key to dim_customers. Pulled with a join from customer_id against stg_olist_raw__customers, not through the deduped intermediate model (doesn't hold customer_id anymore).
+      - name: price_sum
+        description: Null for orders with no order_items rows at all. A known gap, mostly unavailable and canceled orders that never reach fulfillment.
+      - name: freight_value_sum
+        description: Null for orders with no order_items rows at all. Same known gap as price_sum.
+      - name: total_payable_amount
+        description: price_sum plus freight_value_sum. Compared against total_paid by the revenue reconciliation test.
+      - name: total_paid
+        description: Summed from int_order_payments_summed. Compared against total_payable_amount by the revenue reconciliation test.
+
+  - name: fct_order_items
+    description: Item grain, one row per order_id plus order_item_id. Incremental, merged on order_id + order_item_id. Joins orders only to pull order_purchase_timestamp for the incremental filter, since order_items has no timestamp.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - order_id
+              - order_item_id
+    columns:
+      - name: order_id
+        description: Not unique on its own, see the combination test above.
+        data_tests:
+          - not_null
+      - name: order_item_id
+        description: Not unique on its own, see the combination test above.
+        data_tests:
+          - not_null
