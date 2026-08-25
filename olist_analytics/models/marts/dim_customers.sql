@@ -1,3 +1,30 @@
+{{
+
+    config(
+        post_hook=[
+            "{% if target.name == 'prod' %}
+                ALTER TABLE {{ this }} MODIFY COLUMN customer_email SET MASKING POLICY {{ this.database }}.{{ this.schema }}.EMAIL_MASK
+             {% else %}
+                select 1
+             {% endif %}",
+
+            "{% if target.name == 'prod' %}\
+                ALTER TABLE {{ this }} MODIFY COLUMN customer_first_name SET MASKING POLICY {{ this.database }}.{{ this.schema }}.NAME_MASK
+             {% else %}
+                select 1
+             {% endif %}",
+            
+            "{% if target.name == 'prod' %}
+                ALTER TABLE {{ this }} MODIFY COLUMN customer_last_name SET MASKING POLICY {{ this.database }}.{{ this.schema }}.NAME_MASK
+             {% else %}
+                select 1
+             {% endif %}"
+        ]
+    )
+
+}}
+
+
 with
 
 int_customers_deduped as (
