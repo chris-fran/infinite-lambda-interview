@@ -1,3 +1,16 @@
+{{
+
+    config(
+        post_hook=[
+            "ALTER TABLE {{ this }} MODIFY COLUMN customer_email SET MASKING POLICY OLIST_PROD.DBT_PROD_MARTS.EMAIL_MASK",
+            "ALTER TABLE {{ this }} MODIFY COLUMN customer_first_name SET MASKING POLICY OLIST_PROD.DBT_PROD_MARTS.NAME_MASK",
+            "ALTER TABLE {{ this }} MODIFY COLUMN customer_last_name SET MASKING POLICY OLIST_PROD.DBT_PROD_MARTS.NAME_MASK"
+        ]
+    )
+
+}}
+
+
 with
 
 int_customers_deduped as (

@@ -75,11 +75,7 @@ joined as (
 
     {% if is_incremental() %}
 
-    where
-        stg_olist_raw_orders.order_purchase_timestamp > (
-            select dateadd('day', -3, max(fct_orders_existing.order_purchase_timestamp))
-            from {{ this }} as fct_orders_existing
-        )
+    where {{ incremental_filter('stg_olist_raw_orders.order_purchase_timestamp') }}
 
     {% endif %}
 
